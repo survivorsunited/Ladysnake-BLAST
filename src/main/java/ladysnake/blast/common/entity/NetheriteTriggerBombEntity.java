@@ -15,4 +15,9 @@ public class NetheriteTriggerBombEntity extends DiamondTriggerBombEntity {
         return BlastItems.NETHERITE_TRIGGER_BOMB;
     }
 
+
+    @Override
+    protected void explode() {
+        NetheriteBombEntity.collectExplosionDrops(this, super::explode);
+    }
 }
