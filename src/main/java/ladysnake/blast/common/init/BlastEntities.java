@@ -16,6 +16,8 @@ public class BlastEntities {
     public static EntityType<BombEntity> GOLDEN_TRIGGER_BOMB = registerEntityType("golden_trigger_bomb", createBombEntityType(GoldenTriggerBombEntity::new));
     public static EntityType<BombEntity> DIAMOND_BOMB = registerEntityType("diamond_bomb", createBombEntityType(DiamondBombEntity::new));
     public static EntityType<BombEntity> DIAMOND_TRIGGER_BOMB = registerEntityType("diamond_trigger_bomb", createBombEntityType(DiamondTriggerBombEntity::new));
+    public static EntityType<BombEntity> NETHERITE_BOMB = registerEntityType("netherite_bomb", createBombEntityType(NetheriteBombEntity::new));
+    public static EntityType<BombEntity> NETHERITE_TRIGGER_BOMB = registerEntityType("netherite_trigger_bomb", createBombEntityType(NetheriteTriggerBombEntity::new));
     public static EntityType<BombEntity> NAVAL_MINE = registerEntityType("naval_mine", createBombEntityType(NavalMineEntity::new));
     public static EntityType<BombEntity> CONFETTI_BOMB = registerEntityType("confetti_bomb", createBombEntityType(ConfettiBombEntity::new));
     public static EntityType<BombEntity> CONFETTI_TRIGGER_BOMB = registerEntityType("confetti_trigger_bomb", createBombEntityType(ConfettiTriggerBombEntity::new));

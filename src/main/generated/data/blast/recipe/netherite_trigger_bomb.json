@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:gunpowder",
+    "minecraft:netherite_ingot",
+    "minecraft:redstone"
+  ],
+  "result": {
+    "id": "blast:netherite_trigger_bomb",
+    "count": 4
+  }
+}

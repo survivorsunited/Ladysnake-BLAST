@@ -22,6 +22,8 @@ public class BlastItems {
     public static Item GOLDEN_TRIGGER_BOMB = registerTriggerBomb("golden_trigger_bomb", BlastEntities.GOLDEN_TRIGGER_BOMB, ItemGroups.TOOLS);
     public static Item DIAMOND_BOMB = registerBomb("diamond_bomb", BlastEntities.DIAMOND_BOMB, ItemGroups.TOOLS);
     public static Item DIAMOND_TRIGGER_BOMB = registerTriggerBomb("diamond_trigger_bomb", BlastEntities.DIAMOND_TRIGGER_BOMB, ItemGroups.TOOLS);
+    public static Item NETHERITE_BOMB = registerBomb("netherite_bomb", BlastEntities.NETHERITE_BOMB, ItemGroups.TOOLS);
+    public static Item NETHERITE_TRIGGER_BOMB = registerTriggerBomb("netherite_trigger_bomb", BlastEntities.NETHERITE_TRIGGER_BOMB, ItemGroups.TOOLS);
     public static Item NAVAL_MINE = registerTriggerBomb("naval_mine", BlastEntities.NAVAL_MINE, ItemGroups.TOOLS);
     public static Item CONFETTI_BOMB = registerBomb("confetti_bomb", BlastEntities.CONFETTI_BOMB, ItemGroups.TOOLS);
     public static Item CONFETTI_TRIGGER_BOMB = registerTriggerBomb("confetti_trigger_bomb", BlastEntities.CONFETTI_TRIGGER_BOMB, ItemGroups.TOOLS);
