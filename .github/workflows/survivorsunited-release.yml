@@ -5,46 +5,105 @@ on:
   push:
     branches:
       - 'survivorsunited/1.21'
-    tags:
-      - 'survivorsunited-v*'
 
 permissions:
   contents: write
 
+concurrency:
+  group: survivorsunited-blast-release
+  cancel-in-progress: false
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/actions/wrapper-validation@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout maintained branch
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Build Fabric mod
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test Minecraft mod
         run: |
           chmod +x ./gradlew
           ./gradlew clean build --no-daemon
-      - name: Ensure distributable JAR exists
+
+      - name: Prepare release files and version
+        id: package
+        shell: bash
         run: |
-          find build/libs -maxdepth 1 -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' -print | grep .
-      - name: Upload distributable JAR
+          set -euo pipefail
+          MOD_VERSION="$(sed -nE 's/^[[:space:]]*mod_version[[:space:]]*=[[:space:]]*([^[:space:]#]+).*/\1/p' gradle.properties | head -n1)"
+          test -n "$MOD_VERSION"
+          TAG="survivorsunited-v${MOD_VERSION}-build.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          mkdir -p release
+          shopt -s nullglob
+          jars=(build/libs/*.jar)
+          count=0
+          for jar in "${jars[@]}"; do
+            case "$jar" in
+              *-sources.jar|*-dev.jar) continue ;;
+            esac
+            cp "$jar" release/
+            count=$((count + 1))
+          done
+          if [ "$count" -ne 1 ]; then
+            echo "::error::Expected exactly one distributable JAR, found $count"
+            exit 1
+          fi
+          (
+            cd release
+            sha256sum ./*.jar > SHA256SUMS.txt
+          )
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$MOD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "jar=$(basename release/*.jar)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload CI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: survivorsunited-blast-1.21.11
-          path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
-            !build/libs/*-dev.jar
+          name: survivorsunited-blast-${{ steps.package.outputs.version }}
+          path: release/
           if-no-files-found: error
-      - name: Publish GitHub Release for version tags
-        if: startsWith(github.ref, 'refs/tags/survivorsunited-v')
+
+      - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+          MOD_VERSION: ${{ steps.package.outputs.version }}
+        shell: bash
         run: |
-          files=()
-          for file in build/libs/*.jar; do
-            case "$file" in *-sources.jar|*-dev.jar) ;; *) files+=("$file");; esac
-          done
-          gh release create "${GITHUB_REF_NAME}" "${files[@]}" --title "${GITHUB_REF_NAME}" --generate-notes
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; validating its assets."
+          else
+            gh release create "$RELEASE_TAG" release/*.jar release/SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title "SurvivorsUnited BLAST ${MOD_VERSION} (build ${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT})" \
+              --notes "Fabric BLAST for Minecraft 1.21.11. Built from survivorsunited/1.21 at commit ${GITHUB_SHA}. Includes Netherite Bomb and Netherite Trigger Bomb with item and XP vacuum." \
+              --latest
+          fi
+
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | tee release-assets.txt
+          grep -Fx "${{ steps.package.outputs.jar }}" release-assets.txt
+          grep -Fx 'SHA256SUMS.txt' release-assets.txt
+          echo "Published and verified: https://github.com/$GH_REPO/releases/tag/$RELEASE_TAG"
+
+      - name: Write job summary
+        env:
+          RELEASE_TAG: ${{ steps.package.outputs.tag }}
+        run: |
+          echo "### GitHub Release published" >> "$GITHUB_STEP_SUMMARY"
+          echo "[View release](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG})" >> "$GITHUB_STEP_SUMMARY"
+          echo "Minecraft: 1.21.11" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
